@@ -120,6 +120,12 @@
     <Compile Include="oled_demo\CAN.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="oled_demo\iA_PWM_NODE_1.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="oled_demo\iA_PWM_NODE_1.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="oled_demo\main.c">
       <SubType>compile</SubType>
     </Compile>
@@ -141,6 +147,9 @@
     <Compile Include="oled_demo\MicroMenu.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="oled_demo\notes.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="oled_demo\oled.c">
       <SubType>compile</SubType>
     </Compile>
@@ -148,6 +157,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="oled_demo\pin_layout.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="oled_demo\pwmmusic.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="oled_demo\usart.c">

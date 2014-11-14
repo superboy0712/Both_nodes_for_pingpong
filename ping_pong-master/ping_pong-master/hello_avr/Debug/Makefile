@@ -39,9 +39,11 @@ SUBDIRS :=  \
 C_SRCS +=  \
 ../oled_demo/ADC.c \
 ../oled_demo/CAN.c \
+../oled_demo/iA_PWM_NODE_1.c \
 ../oled_demo/main.c \
 ../oled_demo/MicroMenu.c \
 ../oled_demo/oled.c \
+../oled_demo/pwmmusic.c \
 ../oled_demo/usart.c
 
 
@@ -54,33 +56,41 @@ ASM_SRCS +=
 OBJS +=  \
 oled_demo/ADC.o \
 oled_demo/CAN.o \
+oled_demo/iA_PWM_NODE_1.o \
 oled_demo/main.o \
 oled_demo/MicroMenu.o \
 oled_demo/oled.o \
+oled_demo/pwmmusic.o \
 oled_demo/usart.o
 
 OBJS_AS_ARGS +=  \
 oled_demo/ADC.o \
 oled_demo/CAN.o \
+oled_demo/iA_PWM_NODE_1.o \
 oled_demo/main.o \
 oled_demo/MicroMenu.o \
 oled_demo/oled.o \
+oled_demo/pwmmusic.o \
 oled_demo/usart.o
 
 C_DEPS +=  \
 oled_demo/ADC.d \
 oled_demo/CAN.d \
+oled_demo/iA_PWM_NODE_1.d \
 oled_demo/main.d \
 oled_demo/MicroMenu.d \
 oled_demo/oled.d \
+oled_demo/pwmmusic.d \
 oled_demo/usart.d
 
 C_DEPS_AS_ARGS +=  \
 oled_demo/ADC.d \
 oled_demo/CAN.d \
+oled_demo/iA_PWM_NODE_1.d \
 oled_demo/main.d \
 oled_demo/MicroMenu.d \
 oled_demo/oled.d \
+oled_demo/pwmmusic.d \
 oled_demo/usart.d
 
 OUTPUT_FILE_PATH +=hello_avr.elf
@@ -94,6 +104,10 @@ OUTPUT_FILE_DEP:= ./makedep.mk
 LIB_DEP+= 
 
 # AVR32/GNU C Compiler
+
+
+
+
 
 
 

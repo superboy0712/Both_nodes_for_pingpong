@@ -240,12 +240,12 @@ void oled_putchar_inverse(char c){
 	}
 }
 static volatile uint8_t * const buffer_start = (uint8_t *)DISP_BUFFER_START;
-static volatile uint8_t * current_buffer_file_pointer = (uint8_t *)DISP_BUFFER_START; 
-void oled_draw_dot_buffer(uint8_t col, uint8_t row)
+static volatile uint16_t current_buffer_file_pointer = 0; 
+void oled_draw_dot_buffer(uint8_t x, uint8_t y)
 {
 	// LOCATE THE BYTE
-	uint16_t index_offset = col%64 + row/8;
-	*(buffer_start + index_offset) |= (1 << row % 8); 
+	uint16_t index_offset = x + (y/8)*128;
+	buffer_start[index_offset] |= (1 << y % 8); 
 }
 
 void oled_buffer_update(void)
@@ -253,7 +253,7 @@ void oled_buffer_update(void)
 	// copy the whole buffer to the oled
 	int i;
 	oled_goto_xy(0,0);
-	for (i = 0; i< 1024; i++)
+	for (i = 0; i< 896; i++)
 	{
 		oled_wr_d(buffer_start[i]);
 	}
@@ -263,25 +263,99 @@ void oled_buffer_update(void)
 void oled_putchar_buffer(char c)
 {
 	if(c == '\n'){
-		current_buffer_file_pointer += 64;
+		current_buffer_file_pointer += 128;
 		return;
 	}
 	int i;
 	const char j = (c-' ');
-	current_buffer_file_pointer+=CHA_WIDTH;
+	
 
-	if(((current_buffer_file_pointer-buffer_start)%64)/CHA_WIDTH >= MAX_CHARS_A_LINE){
+	if(((current_buffer_file_pointer)%128)/CHA_WIDTH >= MAX_CHARS_A_LINE){
 		//current_col_address = 0;
-		current_buffer_file_pointer += 64;
+		current_buffer_file_pointer += 128;
+		if (current_buffer_file_pointer >= 896)
+		{
+			current_buffer_file_pointer = 0;
+		}
+		
 	}
 
 
 	for(i = 0; i < 5; i++){
 		// pay attention, progmem read
-		*current_buffer_file_pointer = pgm_read_byte(&font[(int)j][i]);
+		buffer_start[current_buffer_file_pointer] = pgm_read_byte(&font[(int)j][i]);
+		current_buffer_file_pointer++;
 	}
 }
 
+void oled_putstr_buffer(const char *str)
+{
+	while(*str)
+		oled_putchar_buffer(*str++);
+		
+	oled_buffer_update();	
+}
+
+void oled_goto_xy_buffer(uint8_t x,uint8_t y)
+{
+	uint16_t index = x + y*128;
+	current_buffer_file_pointer = index;
+}
+
+extern void oled_clear_buffer(void)
+{
+	uint16_t i;
+	for (i = 0; i< 1024; i++)
+	{
+		buffer_start[i] = 0x00;
+	}
+}
+
+void oled_draw_circle(uint8_t x0, uint8_t y0, uint8_t r)
+{
+	int8_t f = 1 - r;
+	int8_t ddF_x = 1;
+	int8_t ddF_y = -2 * r;
+	int8_t x = 0;
+	int8_t y = r;
+	oled_draw_dot_buffer(x0, y0+r);
+	oled_draw_dot_buffer(x0, y0-r);
+	oled_draw_dot_buffer(x0+r, y0);
+	oled_draw_dot_buffer(x0-r, y0);
+	while (x<y) {
+		if (f >= 0) {
+			y--;
+			ddF_y += 2;
+			f += ddF_y;
+		}
+		x++;
+		ddF_x += 2;
+		f += ddF_x;
+		oled_draw_dot_buffer(x0 + x, y0 + y);
+		oled_draw_dot_buffer(x0 - x, y0 + y);
+		oled_draw_dot_buffer(x0 + x, y0 - y);
+		oled_draw_dot_buffer(x0 - x, y0 - y);
+		oled_draw_dot_buffer(x0 + y, y0 + x);
+		oled_draw_dot_buffer(x0 - y, y0 + x);
+		oled_draw_dot_buffer(x0 + y, y0 - x);
+		oled_draw_dot_buffer(x0 - y, y0 - x);
+	}
+	oled_buffer_update();
+}
+
+void oled_draw_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h)
+{
+	int16_t i;
+	for (i=x; i<x+w; i++) {
+		oled_draw_dot_buffer(i, y);
+		oled_draw_dot_buffer(i, y+h-1);
+	}
+	for (i=y; i<y+h; i++) {
+		oled_draw_dot_buffer(x, i);
+		oled_draw_dot_buffer(x+w-1, i);
+	}
+	oled_buffer_update();
+}
 
 
 

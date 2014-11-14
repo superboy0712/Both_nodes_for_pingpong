@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <avr/interrupt.h>
-
+#include "iA_PWM_NODE_1.h"
 #define USART_BAUD 9600
 #define MYUBRR F_CPU/16/USART_BAUD-1
 
@@ -44,7 +44,7 @@ void generic_SelectCallback(uint8_t x, uint8_t y, const char* str){
 /************************************************************************/
 /* enable_debug_mode_display                                            */
 /************************************************************************/
-int flag_enable_debug_mode_display = 1;
+int flag_enable_debug_mode_display = 0;
 void enable_debug_mode_display(void){
 	oled_goto_xy(6,0);
 	puts("Into Debug mode");
@@ -60,12 +60,29 @@ void enable_online_tuning_display(void){
 	flag_enable_online_tuning = 1;
 }
 /************************************************************************/
-/*  display managing flags    and routine                                */
+/*  Graphic Demo                                                        */
+/************************************************************************/
+int flag_enable_graphic_demo = 0;
+void Graphic_demo_enable(void){
+	flag_enable_graphic_demo = 1;
+}
+/************************************************************************/
+/*  Music Demo                                                          */
+/************************************************************************/
+int flag_enable_music_demo = 0;
+void Music_demo_enable(void){
+	flag_enable_music_demo = 1;
+}
+/************************************************************************/
+/*  display flags clr routine                                */
 /************************************************************************/
 inline static void Menu_Dsp_flag_clr(void){
 	flag_enable_debug_mode_display = 0;
 	flag_enable_online_tuning = 0;
+	flag_enable_graphic_demo = 0;
+	flag_enable_music_demo = 0;
 }
+
 /** Generic function to write the text of a menu.
  *
  *  \param[in] Text   Text of the selected menu to write, in \ref MENU_ITEM_STORAGE memory space
@@ -74,7 +91,8 @@ inline static void Menu_Dsp_flag_clr(void){
 MENU_ITEM( Menu_1, (5), (2), Menu_2, NULL_MENU, NULL_MENU, Menu_1_1, generic_SelectCallback, NULL, "Let's Play!");
 MENU_ITEM( Menu_2, (10), (3), Menu_3, Menu_1, NULL_MENU, Menu_2_1, generic_SelectCallback, NULL, "Online Tuning!");
 MENU_ITEM( Menu_3, (15), (4), Menu_4, Menu_2, NULL_MENU, Menu_3_1, generic_SelectCallback, NULL, "On the Fly Debugging!");
-MENU_ITEM( Menu_4, (20), (5), NULL_MENU, Menu_3, NULL_MENU, Menu_4_1, generic_SelectCallback, NULL, "Dual Buffer Demo!");
+MENU_ITEM( Menu_4, (20), (5), Menu_5, Menu_3, NULL_MENU, Menu_4_1, generic_SelectCallback, NULL, "Dual Buffer Demo!");
+MENU_ITEM( Menu_5, (20), (6), NULL_MENU, Menu_4, NULL_MENU, Menu_5_1, generic_SelectCallback, NULL, "Music Demo!");
 MENU_ITEM( Menu_1_1, 7, 1, Menu_1_2, NULL_MENU, Menu_1, NULL_MENU, generic_SelectCallback, NULL, "Play with Joystick");
 MENU_ITEM( Menu_1_2, 7, 2, Menu_1_3, Menu_1_1, Menu_1, NULL_MENU, generic_SelectCallback, NULL, "Play with SmartPhone");
 MENU_ITEM( Menu_1_3, 7, 3, NULL_MENU, Menu_1_2, Menu_1, NULL_MENU, generic_SelectCallback, NULL, "Auto Play");
@@ -82,7 +100,8 @@ MENU_ITEM( Menu_2_1, 7, 1, Menu_2_2, NULL_MENU, Menu_2, NULL_MENU, generic_Selec
 MENU_ITEM( Menu_2_2, 7, 2, Menu_2_3, Menu_2_1, Menu_2, NULL_MENU, generic_SelectCallback, NULL, "Tuning Ki");
 MENU_ITEM( Menu_2_3, 7, 3, NULL_MENU, Menu_2_2, Menu_2, NULL_MENU, generic_SelectCallback, NULL, "Tuning Kd");
 MENU_ITEM( Menu_3_1, 7, 1, NULL_MENU, NULL_MENU, Menu_3, NULL_MENU, generic_SelectCallback, enable_debug_mode_display, "press q for debug info");
-MENU_ITEM( Menu_4_1, 7, 1, NULL_MENU, NULL_MENU, Menu_4, NULL_MENU, generic_SelectCallback, NULL, "press D for DEMO");
+MENU_ITEM( Menu_4_1, 7, 1, NULL_MENU, NULL_MENU, Menu_4, NULL_MENU, generic_SelectCallback, Graphic_demo_enable, "press q for Graphic DEMO");
+MENU_ITEM( Menu_5_1, 7, 1, NULL_MENU, NULL_MENU, Menu_5, NULL_MENU, generic_SelectCallback, Music_demo_enable, "press q for Music DEMO");
 static FILE oled_stdout =  FDEV_SETUP_STREAM(oled_putchar_printf, NULL, _FDEV_SETUP_WRITE);
 static FILE usart_stdout =  FDEV_SETUP_STREAM(usart_putchar_printf, NULL, _FDEV_SETUP_WRITE);
 
@@ -102,7 +121,6 @@ int flag_plunger=0;
 int is_main_not_fetch_the_buffer=0;
 char rx_buff[20];
 int rx_count=0;
-
 
 int main(void)
 {	/* Set up the default menu text write callback, and navigate to an absolute menu item entry. */
@@ -154,9 +172,18 @@ int main(void)
 	Menu_Navigate(&Menu_1);
 	Menu_DrawBase();
 	Menu_Navigate(&Menu_1);
+	
+	
+	// default pid 
 	tx_data[3] = 8;//KP
 	tx_data[4] = 5;//KI
 	tx_data[5] = 5;//KD
+	/************************************************************************/
+	/*      music  init                                                     */
+	/************************************************************************/
+	InitMusic();
+
+	
 	while (1)
     {
 		
@@ -175,8 +202,6 @@ int main(void)
 					Menu_Navigate(MENU_PARENT);
 					break;
 				case BUTTON_RIGHT:
-					// level changes update display pls clr
-					oled_clear();
 					Menu_Dsp_flag_clr();
 					Menu_Navigate(MENU_CHILD);
 					break;
@@ -209,14 +234,6 @@ int main(void)
 			//int y = (0x80 & pos.y )? (pos.y + 0xff00):pos.y;
 			can_transmit(0,0x05,8,tx_data);			//BUFFER 0, ID 0x05, 8 data bytes and data=stored string
 			
-			/*
-			_delay_ms(125);
-			oled_goto_xy(5,1);
-			printf("data Tran: %d, x: %5d, y: %5d, %d, %d, %d, %d, %d"\
-					, tx_data[0],pos.x,pos.y,tx_data[3],tx_data[4],tx_data[5],tx_data[6],tx_data[7]);		//0 is pattern, 1 is x and 2 is y
-			*/
-
-			
 			//CAN RECEIVE FLAG PART
 			if(can_rx_flag)
 			{
@@ -235,19 +252,6 @@ int main(void)
 
 				can_rx_flag=0;
 				can_receive(rx_id,rx_length,rx_data);
-				
-				/*
-				int print_temp[7];
-				int i;
-				for (i = 0; i< 7; i++)
-				{
-					print_temp[i] = (0x80 & rx_data[i] )? (rx_data[i] + 0xff00):rx_data[i];
-				}
-				int16_t encoder_val = (uint8_t)rx_data[5]*0x100 + (uint8_t)rx_data[6];
-				int16_t set_val =  (uint8_t)rx_data[3]*0x100 + (uint8_t)rx_data[4];
-				//int a = (0x80 & rx_data[2] )? (rx_data[2] + 0xff00):rx_data[2];
-				printf("Receive Data: %5i, %5i, SP: %5d, ENC: %5d\n",print_temp[0],print_temp[1],set_val,encoder_val);		//display pattern (constant), x data plus 5 and y data +10
-				*/
 
 			}
 			
@@ -358,8 +362,33 @@ int main(void)
 						printf("Current Kp%2d, Ki%2d, Kd%2d",tx_data[3],tx_data[4],tx_data[5]);
 						
 					}
+					// music
+					if (flag_enable_music_demo)
+					{
+						flag_enable_music_demo = 0;
+						cli();
+						MusicDemo();
+						sei();
+					}
+					// graphic
+					if (flag_enable_graphic_demo)
+					{
+						flag_enable_graphic_demo = 0;
+						cli();
+						oled_clear_buffer();
+						oled_goto_xy_buffer(23,4);
+						oled_putstr_buffer("hello world!!\n");
+						uint16_t x = 0;
+						
+						do{
+							x++;
+							oled_draw_circle(64,32,x);
+							oled_draw_rect(12,13,2*x,x);
+							_delay_ms(100);
+						} while(x<=32);
+						sei();
+					}
 					
-		
 				}
 			}
 	}
