@@ -44,16 +44,28 @@ void generic_SelectCallback(uint8_t x, uint8_t y, const char* str){
 /************************************************************************/
 /* enable_debug_mode_display                                            */
 /************************************************************************/
-int flag_enable_debug_mode_display = 0;
+int flag_enable_debug_mode_display = 1;
 void enable_debug_mode_display(void){
 	oled_goto_xy(6,0);
 	puts("Into Debug mode");
 	flag_enable_debug_mode_display = 1;
 }
 /************************************************************************/
-/*  online tuning flag                                                  */
+/*  enable online tunning                                               */
 /************************************************************************/
-int flag_enable_online_tuning = 0;
+int flag_enable_online_tuning = 0; 
+void enable_online_tuning_display(void){
+	oled_goto_xy(6,0);
+	puts("Into Online tunning");
+	flag_enable_online_tuning = 1;
+}
+/************************************************************************/
+/*  display managing flags    and routine                                */
+/************************************************************************/
+inline static void Menu_Dsp_flag_clr(void){
+	flag_enable_debug_mode_display = 0;
+	flag_enable_online_tuning = 0;
+}
 /** Generic function to write the text of a menu.
  *
  *  \param[in] Text   Text of the selected menu to write, in \ref MENU_ITEM_STORAGE memory space
@@ -62,7 +74,7 @@ int flag_enable_online_tuning = 0;
 MENU_ITEM( Menu_1, (5), (2), Menu_2, NULL_MENU, NULL_MENU, Menu_1_1, generic_SelectCallback, NULL, "Let's Play!");
 MENU_ITEM( Menu_2, (10), (3), Menu_3, Menu_1, NULL_MENU, Menu_2_1, generic_SelectCallback, NULL, "Online Tuning!");
 MENU_ITEM( Menu_3, (15), (4), Menu_4, Menu_2, NULL_MENU, Menu_3_1, generic_SelectCallback, NULL, "On the Fly Debugging!");
-MENU_ITEM( Menu_4, (20), (5), NULL_MENU, Menu_3, NULL_MENU, NULL_MENU, generic_SelectCallback, NULL, "Can almost done!");
+MENU_ITEM( Menu_4, (20), (5), NULL_MENU, Menu_3, NULL_MENU, Menu_4_1, generic_SelectCallback, NULL, "Dual Buffer Demo!");
 MENU_ITEM( Menu_1_1, 7, 1, Menu_1_2, NULL_MENU, Menu_1, NULL_MENU, generic_SelectCallback, NULL, "Play with Joystick");
 MENU_ITEM( Menu_1_2, 7, 2, Menu_1_3, Menu_1_1, Menu_1, NULL_MENU, generic_SelectCallback, NULL, "Play with SmartPhone");
 MENU_ITEM( Menu_1_3, 7, 3, NULL_MENU, Menu_1_2, Menu_1, NULL_MENU, generic_SelectCallback, NULL, "Auto Play");
@@ -70,6 +82,7 @@ MENU_ITEM( Menu_2_1, 7, 1, Menu_2_2, NULL_MENU, Menu_2, NULL_MENU, generic_Selec
 MENU_ITEM( Menu_2_2, 7, 2, Menu_2_3, Menu_2_1, Menu_2, NULL_MENU, generic_SelectCallback, NULL, "Tuning Ki");
 MENU_ITEM( Menu_2_3, 7, 3, NULL_MENU, Menu_2_2, Menu_2, NULL_MENU, generic_SelectCallback, NULL, "Tuning Kd");
 MENU_ITEM( Menu_3_1, 7, 1, NULL_MENU, NULL_MENU, Menu_3, NULL_MENU, generic_SelectCallback, enable_debug_mode_display, "press q for debug info");
+MENU_ITEM( Menu_4_1, 7, 1, NULL_MENU, NULL_MENU, Menu_4, NULL_MENU, generic_SelectCallback, NULL, "press D for DEMO");
 static FILE oled_stdout =  FDEV_SETUP_STREAM(oled_putchar_printf, NULL, _FDEV_SETUP_WRITE);
 static FILE usart_stdout =  FDEV_SETUP_STREAM(usart_putchar_printf, NULL, _FDEV_SETUP_WRITE);
 
@@ -150,22 +163,25 @@ int main(void)
 			switch (button_val)
 			{
 				case BUTTON_UP:
+					Menu_Dsp_flag_clr();
 					Menu_Navigate(MENU_PREVIOUS);
-					flag_enable_debug_mode_display = 0;
 					break;
 				case BUTTON_DOWN:
-					flag_enable_debug_mode_display = 0;
+					Menu_Dsp_flag_clr();
 					Menu_Navigate(MENU_NEXT);
 					break;
 				case BUTTON_LEFT:
+					Menu_Dsp_flag_clr();
 					Menu_Navigate(MENU_PARENT);
-					flag_enable_debug_mode_display = 0;
 					break;
 				case BUTTON_RIGHT:
+					// level changes update display pls clr
+					oled_clear();
+					Menu_Dsp_flag_clr();
 					Menu_Navigate(MENU_CHILD);
-					flag_enable_debug_mode_display = 0;
 					break;
 				case BUTTON_ENTER:
+					Menu_Dsp_flag_clr();
 					Menu_EnterCurrentItem();
 					break;
 				default:
@@ -292,7 +308,7 @@ int main(void)
 					// Online Tuning Mode
 					if (!strcmp("config\n",rx_buff))
 					{	
-						flag_enable_debug_mode_display = 0;
+						Menu_Dsp_flag_clr();
 						Menu_Navigate(&Menu_2_1);
 						oled_goto_xy(6,0);
 						puts("Into PID config mode");
@@ -303,13 +319,14 @@ int main(void)
 					// Play Mode
 					if (!strcmp("play\n",rx_buff))
 					{	
-						flag_enable_debug_mode_display = 0;
+						Menu_Dsp_flag_clr();
 						Menu_Navigate(&Menu_1_1);
 						oled_goto_xy(6,0);
 						puts("Into Play mode");
 					}
 					if (!strcmp("debug\n",rx_buff))
 					{
+						Menu_Dsp_flag_clr();
 						Menu_Navigate(&Menu_3_1);
 						/*oled_goto_xy(6,0);
 						puts("Into Debug mode");*/
@@ -321,12 +338,25 @@ int main(void)
 					/************************************************************************/
 					if (flag_enable_online_tuning)
 					{	
-						printf("changing kp\n");
+						int getval;
 						if (!strncmp("kp ",rx_buff,3)){
-							printf("changing kp2\n");
-							tx_data[3] = atoi(&rx_buff[3]);
-							printf("new kp: %d\n",tx_data[3]);
+							sscanf(rx_buff,"kp %d\n", &getval);
+							tx_data[3] = (char) getval; 
+							printf("new kp: %2d\n",tx_data[3]);
+						} else if (!strncmp("ki ",rx_buff,3))
+						{
+							sscanf(rx_buff,"ki %d\n", &getval);
+							tx_data[4] = (char) getval;
+							printf("new ki: %2d\n",tx_data[3]);
+						} else if (!strncmp("kd ",rx_buff,3))
+						{
+							sscanf(rx_buff,"kd %d\n", &getval);
+							tx_data[5] = (char) getval;
+							printf("new kd: %2d\n",tx_data[3]);
 						}
+						oled_goto_xy(2,5);
+						printf("Current Kp%2d, Ki%2d, Kd%2d",tx_data[3],tx_data[4],tx_data[5]);
+						
 					}
 					
 		

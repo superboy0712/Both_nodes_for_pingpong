@@ -239,6 +239,51 @@ void oled_putchar_inverse(char c){
 		oled_wr_d(~(pgm_read_byte(&font[(int)j][i])));
 	}
 }
+static volatile uint8_t * const buffer_start = (uint8_t *)DISP_BUFFER_START;
+static volatile uint8_t * current_buffer_file_pointer = (uint8_t *)DISP_BUFFER_START; 
+void oled_draw_dot_buffer(uint8_t col, uint8_t row)
+{
+	// LOCATE THE BYTE
+	uint16_t index_offset = col%64 + row/8;
+	*(buffer_start + index_offset) |= (1 << row % 8); 
+}
+
+void oled_buffer_update(void)
+{
+	// copy the whole buffer to the oled
+	int i;
+	oled_goto_xy(0,0);
+	for (i = 0; i< 1024; i++)
+	{
+		oled_wr_d(buffer_start[i]);
+	}
+	
+}
+
+void oled_putchar_buffer(char c)
+{
+	if(c == '\n'){
+		current_buffer_file_pointer += 64;
+		return;
+	}
+	int i;
+	const char j = (c-' ');
+	current_buffer_file_pointer+=CHA_WIDTH;
+
+	if(((current_buffer_file_pointer-buffer_start)%64)/CHA_WIDTH >= MAX_CHARS_A_LINE){
+		//current_col_address = 0;
+		current_buffer_file_pointer += 64;
+	}
+
+
+	for(i = 0; i < 5; i++){
+		// pay attention, progmem read
+		*current_buffer_file_pointer = pgm_read_byte(&font[(int)j][i]);
+	}
+}
+
+
+
 
 /*
 void oled_buffer_wr(

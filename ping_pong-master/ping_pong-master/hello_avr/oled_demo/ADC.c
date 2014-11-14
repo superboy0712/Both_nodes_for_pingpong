@@ -84,7 +84,6 @@ void position(signed int *x_val,signed int *y_val,uint8_t x_mean,uint8_t y_mean)
 struct adc_pos adc_get_position(void){
 	struct adc_pos pos;
 
-	int raw;
 
 	pos.x = adc_read(X_CH);
 	pos.y = adc_read(Y_CH);//-y_mean;

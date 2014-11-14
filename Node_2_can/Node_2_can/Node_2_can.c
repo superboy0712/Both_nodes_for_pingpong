@@ -379,6 +379,7 @@ int i;
 			control_output= (Kp*error_p) + (Ki*error_int);
 		}
 		
+		//control_output= (Kp*error_p) + (Ki*error_int)+(Kd*error_d);
 		//control_output=set_point-120;				//at center, it should be zero and at extreme (left or right but when ADC =0 ) its should be maximum/high enough (120)
 		if(control_output>0)
 		{

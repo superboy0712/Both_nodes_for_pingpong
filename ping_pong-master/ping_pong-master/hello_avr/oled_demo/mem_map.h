@@ -19,5 +19,6 @@
 #define ADC_ADDR_END			0x17ff
 #define SRAM_ADDR_START			0x1800
 #define SRAM_ADDR_END			0x1fff
-
+#define DISP_BUFFER_START		0X1900
+#define DISP_BUFFER_END			0X1CFF
 #endif /* MEM_MAP_H_ */

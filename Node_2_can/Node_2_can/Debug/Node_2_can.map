@@ -905,22 +905,22 @@ END GROUP
  .debug_frame   0x000003d4       0x34 PWM.o
  .debug_frame   0x00000408       0x6c TWI_NODE_2.o
 
-.debug_str      0x00000000      0x700
+.debug_str      0x00000000      0x66e
  *(.debug_str)
- .debug_str     0x00000000      0x14a ADC_NODE_2.o
-                                0x17e (size before relaxing)
- .debug_str     0x0000014a      0x22f atmega_twi_driver.o
-                                0x34e (size before relaxing)
- .debug_str     0x00000379      0x129 CAN.o
-                                0x2a6 (size before relaxing)
- .debug_str     0x000004a2       0x54 ENCODER_NODE_2.o
-                                0x203 (size before relaxing)
- .debug_str     0x000004f6      0x1b8 Node_2_can.o
+ .debug_str     0x00000000      0x143 ADC_NODE_2.o
+                                0x177 (size before relaxing)
+ .debug_str     0x00000143      0x1e2 atmega_twi_driver.o
+                                0x33f (size before relaxing)
+ .debug_str     0x00000325      0x129 CAN.o
+                                0x297 (size before relaxing)
+ .debug_str     0x0000044e       0x54 ENCODER_NODE_2.o
+                                0x1fc (size before relaxing)
+ .debug_str     0x000004a2      0x17a Node_2_can.o
                                 0x3c4 (size before relaxing)
- .debug_str     0x000006ae       0x10 PWM.o
-                                0x17e (size before relaxing)
- .debug_str     0x000006be       0x42 TWI_NODE_2.o
-                                0x1a5 (size before relaxing)
+ .debug_str     0x0000061c       0x10 PWM.o
+                                0x16f (size before relaxing)
+ .debug_str     0x0000062c       0x42 TWI_NODE_2.o
+                                0x196 (size before relaxing)
 
 .debug_loc      0x00000000     0x11ce
  *(.debug_loc)
